@@ -1,7 +1,7 @@
-import {Service, PlatformAccessory, CharacteristicValue} from 'homebridge';
+import {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
 
 import {HealthBoxHomebridgePlatform} from './platform';
-import fetch from 'node-fetch';
+import axios from 'axios';
 
 /**
  * Platform Accessory
@@ -25,7 +25,6 @@ export class HealthBoxFanAccessory {
     private readonly platform: HealthBoxHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
-
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson');
@@ -98,15 +97,15 @@ export class HealthBoxFanAccessory {
   async setOn(value: CharacteristicValue) {
     // implement your own code to turn your device on/off
     this.exampleStates.On = value as boolean;
-    await fetch('http://192.168.178.26/v1/api/boost/' + this.exampleStates.id,
-      {
-        method: 'POST',
-        body: {
-          'enable': true, 'level': 200, 'timeout': 3600,
-        },
-      });
-
+    const body = {
+      method: 'POST',
+      body: {
+        'enable': true, 'level': 200, 'timeout': 3600,
+      },
+    };
     this.platform.log.debug('Set Characteristic On ->', value);
+
+    await axios.put('http://192.168.178.26/v1/api/boost/' + '1', body);
   }
 
   /**
