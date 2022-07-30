@@ -25,7 +25,8 @@ export class HealthBoxAirQualityAccessory {
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.manufacturer.serial);
 
-    this.service = this.accessory.getService(this.platform.Service.AirQualitySensor) || this.accessory.addService(this.platform.Service.AirQualitySensor);
+    this.service = this.accessory.getService(this.platform.Service.AirQualitySensor)
+      || this.accessory.addService(this.platform.Service.AirQualitySensor);
 
     this.platform.log.debug('Set name ', accessory.context.sensor.name);
 
