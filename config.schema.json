@@ -5,10 +5,28 @@
   "schema": {
     "type": "object",
     "properties": {
-      "healthboxIp": {
+      "healthBoxUri": {
         "title": "The IP-address of your HealthBox Instance",
         "type": "string",
-          "placeholder": "http://192.168.178.26"
+        "required": true,
+        "format": "uri",
+        "placeholder": "http://192.168.1.3"
+      },
+      "boostFanSpeed": {
+        "title": "The speed that the fan should run at when using boost",
+        "placeholder": 200,
+        "default": 200,
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 200
+      },
+      "boostDuration": {
+        "title": "The duration that the boost should last in seconds",
+        "placeholder": 3600,
+        "default": 3600,
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 999999999
       }
     }
   }

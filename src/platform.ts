@@ -1,4 +1,4 @@
-import {API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic} from 'homebridge';
+import {API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service} from 'homebridge';
 
 import {PLATFORM_NAME, PLUGIN_NAME} from './settings';
 import {HealthBoxFanAccessory} from './platformAccessory';
@@ -22,6 +22,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
+
     this.log.debug('Finished initializing platform:', this.config.name);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
@@ -56,7 +57,8 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
-    axios.get<HealthBoxInfoResponse>('http://192.168.178.26/v1/api/data/current').then(resp => {
+    const healthBoxIp = this.config['healthBoxUri'];
+    axios.get<HealthBoxInfoResponse>(healthBoxIp + '/v1/api/data/current').then(resp => {
       for (const room of resp.data.room) {
         // loop over the discovered devices and register each one if it has not already been registered
 
@@ -84,8 +86,9 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
-          new HealthBoxFanAccessory(this, existingAccessory);
+          existingAccessory.context.healthBoxIp = healthBoxIp;
 
+          new HealthBoxFanAccessory(this, existingAccessory);
           // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
           // remove platform accessories when no longer present
           // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
@@ -102,6 +105,10 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
           accessory.context.room = room;
           accessory.context.manufacturer = resp.data;
           accessory.context.version = 0; //Version added so we can introduce breaking changes
+          accessory.context.config = {};
+          accessory.context.config.healthBoxIp = healthBoxIp;
+          accessory.context.config.boostFanSpeed = this.config['boostFanSpeed'];
+          accessory.context.config.boostDuration = this.config['boostDuration'];
 
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`

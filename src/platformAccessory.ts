@@ -19,13 +19,20 @@ export class HealthBoxFanAccessory {
    */
   private state = {
     id: 1,
+    config: {
+      boostFanSpeed: 200,
+      boostDuration: 3600,
+      healthBoxIp: 'http://localhost:8080',
+    },
   };
 
   constructor(
     private readonly platform: HealthBoxHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
-
+    this.state.config.boostFanSpeed = accessory.context.config.boostFanSpeed;
+    this.state.config.boostDuration = accessory.context.config.boostDuration;
+    this.state.config.healthBoxIp = accessory.context.config.healthBoxIp;
     this.state.id = accessory.context.room.id;
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -99,10 +106,10 @@ export class HealthBoxFanAccessory {
     // implement your own code to turn your device on/off
     this.platform.log.debug(value ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
     const body = {
-      'enable': value, 'level': 200, 'timeout': 3600,
+      'enable': value, 'level': this.state.config.boostFanSpeed, 'timeout': this.state.config.boostDuration,
     };
 
-    await axios.put<HealthBoxBoostResponse>('http://192.168.178.26/v1/api/boost/' + this.state.id, body).then(result => {
+    await axios.put<HealthBoxBoostResponse>(this.state.config.healthBoxIp + '/v1/api/boost/' + this.state.id, body).then(result => {
       this.platform.log.debug(result.data.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.id);
     });
   }
@@ -125,8 +132,7 @@ export class HealthBoxFanAccessory {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.platform.log.debug('Requesting Boost status for id ', this.state.id);
-
-    return axios.get<HealthBoxInfoResponse>('http://192.168.178.26/v1/api/data/current').then(resp => {
+    return axios.get<HealthBoxInfoResponse>(this.state.config.healthBoxIp + '/v1/api/data/current').then(resp => {
       const isPossiblyOn = resp.data.room.filter(room => room.id === this.state.id)
         .pop()!.actuator
         .filter(parameter => parameter.type === 'air valve')
