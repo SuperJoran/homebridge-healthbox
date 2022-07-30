@@ -17,7 +17,7 @@
         "placeholder": 200,
         "default": 200,
         "type": "integer",
-        "minimum": 0,
+        "minimum": 100,
         "maximum": 200
       },
       "boostDuration": {

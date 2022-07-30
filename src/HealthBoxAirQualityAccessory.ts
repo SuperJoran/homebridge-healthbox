@@ -39,11 +39,16 @@ export class HealthBoxAirQualityAccessory {
   async getOn(): Promise<CharacteristicValue> {
     this.platform.log.debug('Requesting Air quality status for id ', this.state.id);
     return axios.get<HealthBoxInfoResponse>(this.state.config.healthBoxIp + '/v1/api/data/current').then(resp => {
-      const value = resp.data.sensor.filter(sensor => sensor['basic id'] === this.state.id)
+      let value = resp.data.sensor.filter(sensor => sensor['basic id'] === this.state.id)
         .map(sensor => parseFloat(sensor.parameter.index.value))
         .map(num => num / 20)
         .map(num => Number(num.toFixed(0)))
         .pop()!;
+
+      if (value > 5) {
+        this.platform.log.debug('Health status exceeded max value! value=', value);
+        value = 5;
+      }
 
       this.platform.log.debug('Health status is:', value);
       return value;
