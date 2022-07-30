@@ -2,6 +2,8 @@ import {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
 
 import {HealthBoxHomebridgePlatform} from './platform';
 import axios from 'axios';
+import {HealthBoxInfoResponse} from './model/api/health-box-info-response.http-model';
+import {HealthBoxBoostResponse} from './model/api/health-box-boost-response.http-model';
 
 /**
  * Platform Accessory
@@ -15,19 +17,20 @@ export class HealthBoxFanAccessory {
    * These are just used to create a working example
    * You should implement your own code to track the state of your accessory
    */
-  private exampleStates = {
+  private state = {
     id: 1,
-    On: false,
-    RotationSpeed: 0,
   };
 
   constructor(
     private readonly platform: HealthBoxHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
+
+    this.state.id = accessory.context.room.id;
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson');
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.manufacturer.serial);
 
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
     // you can create multiple services for each accessory
@@ -35,7 +38,9 @@ export class HealthBoxFanAccessory {
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
+    this.platform.log.debug('Set name ->', accessory.context.room.name);
+
+    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.room.name);
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
@@ -44,10 +49,6 @@ export class HealthBoxFanAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.On)
       .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
       .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
-
-    // register handlers for the Brightness Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.RotationSpeed)
-      .onSet(this.setRotationSpeed.bind(this));       // SET - bind to the 'setBrightness` method below
 
     /**
      * Creating multiple services of the same type.
@@ -96,16 +97,14 @@ export class HealthBoxFanAccessory {
    */
   async setOn(value: CharacteristicValue) {
     // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
+    this.platform.log.debug(value ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
     const body = {
-      method: 'POST',
-      body: {
-        'enable': true, 'level': 200, 'timeout': 3600,
-      },
+      'enable': value, 'level': 200, 'timeout': 3600,
     };
-    this.platform.log.debug('Set Characteristic On ->', value);
 
-    await axios.put('http://192.168.178.26/v1/api/boost/' + '1', body);
+    await axios.put<HealthBoxBoostResponse>('http://192.168.178.26/v1/api/boost/' + this.state.id, body).then(result => {
+      this.platform.log.debug(result.data.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.id);
+    });
   }
 
   /**
@@ -123,25 +122,21 @@ export class HealthBoxFanAccessory {
    */
   async getOn(): Promise<CharacteristicValue> {
     // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
-
-    this.platform.log.debug('Get Characteristic On ->', isOn);
-
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    this.platform.log.debug('Requesting Boost status for id ', this.state.id);
 
-    return isOn;
+    return axios.get<HealthBoxInfoResponse>('http://192.168.178.26/v1/api/data/current').then(resp => {
+      const isPossiblyOn = resp.data.room.filter(room => room.id === this.state.id)
+        .pop()!.actuator
+        .filter(parameter => parameter.type === 'air valve')
+        .map(actuator => actuator.parameter)
+        .map(param => parseFloat(param.flow_rate.value) > 50)
+        .pop();
+
+      const isOn = isPossiblyOn ?? false;
+      this.platform.log.debug(isOn ? 'Boost is currently ON for id ' : 'Boost is currently OFF for id', this.state.id);
+      return isOn;
+    });
   }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
-   */
-  async setRotationSpeed(value: CharacteristicValue) {
-    // implement your own code to set the brightness
-    this.exampleStates.RotationSpeed = value as number;
-
-    this.platform.log.debug('Set Rotationspeed -> ', value);
-  }
-
 }

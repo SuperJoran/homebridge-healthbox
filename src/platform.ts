@@ -3,15 +3,7 @@ import {API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, S
 import {PLATFORM_NAME, PLUGIN_NAME} from './settings';
 import {HealthBoxFanAccessory} from './platformAccessory';
 import axios from 'axios';
-
-type Room = {
-  id: number;
-  name: string;
-};
-type HealthBoxResponse = {
-  serial: string;
-  room: Room[];
-};
+import {HealthBoxInfoResponse} from './model/api/health-box-info-response.http-model';
 
 /**
  * HomebridgePlatform
@@ -64,7 +56,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
-    axios.get<HealthBoxResponse>('http://192.168.178.26/v1/api/data/current').then(resp => {
+    axios.get<HealthBoxInfoResponse>('http://192.168.178.26/v1/api/data/current').then(resp => {
       for (const room of resp.data.room) {
         // loop over the discovered devices and register each one if it has not already been registered
 
@@ -75,7 +67,12 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
 
         // see if an accessory with the same uuid has already been registered and restored from
         // the cached devices we stored in the `configureAccessory` method above
-        const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+        let existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+
+        if (existingAccessory && !existingAccessory.context.version) {
+          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+          existingAccessory = undefined;
+        }
 
         if (existingAccessory) {
           // the accessory already exists
@@ -102,7 +99,9 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
 
           // store a copy of the device object in the `accessory.context`
           // the `context` property can be used to store any data about the accessory you may need
-          accessory.context.device = room;
+          accessory.context.room = room;
+          accessory.context.manufacturer = resp.data;
+          accessory.context.version = 0; //Version added so we can introduce breaking changes
 
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`
