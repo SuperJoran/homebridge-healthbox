@@ -1,4 +1,10 @@
-# Healthbox Plugin
+# HealthBox Homebridge Plugin
+
+A Homebridge plugin that adds homekit functionality to your HealthBox installation.
+
+Requirements: a running HomeBridge server
+
+**homebridge-healthbox-plugin**
 
 Example config.json:
 

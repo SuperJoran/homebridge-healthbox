@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "Healthbox Plugin",
   "name": "homebridge-healthbox-plugin",
   "version": "1.0.1-beta.0",
