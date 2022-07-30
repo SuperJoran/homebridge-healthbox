@@ -1,15 +1,14 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "HealthBoxHomebridgePlugin",
   "pluginType": "platform",
   "singular": true,
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
+      "healthboxIp": {
+        "title": "The IP-address of your HealthBox Instance",
         "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+          "placeholder": "http://192.168.178.26"
       }
     }
   }
