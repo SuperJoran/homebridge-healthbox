@@ -5,6 +5,7 @@ import {HealthBoxFanAccessory} from './HealthBoxFanAccessory';
 import axios, {AxiosResponse} from 'axios';
 import {HealthBoxInfoResponse} from './model/api/health-box-info-response.http-model';
 import {HealthBoxAirQualityAccessory} from './HealthBoxAirQualityAccessory';
+import {HealthBoxApiService} from './health-box-api-service';
 
 /**
  * HomebridgePlatform
@@ -18,11 +19,16 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
+  private healthBoxService;
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
+    this.healthBoxService = new HealthBoxApiService(this.config['healthBoxUri'],
+      this.config['boostFanSpeed'],
+      this.config['boostDuration']);
 
     this.log.debug('Finished initializing platform:', this.config.name);
 
@@ -62,9 +68,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
       if (existingAccessory) {
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-        existingAccessory.context.healthBoxIp = this.config['healthBoxUri'];
-
-        new HealthBoxFanAccessory(this, existingAccessory);
+        new HealthBoxFanAccessory(this, existingAccessory, this.healthBoxService);
       } else {
         this.log.info('Adding new accessory:', room.name);
 
@@ -73,13 +77,8 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.room = room;
         accessory.context.manufacturer = resp.data;
         accessory.context.version = 1; //Version added so we can introduce breaking changes
-        accessory.context.config = {};
-        accessory.context.config.healthBoxIp = this.config['healthBoxUri'];
-        accessory.context.config.boostFanSpeed = this.config['boostFanSpeed'];
-        accessory.context.config.boostDuration = this.config['boostDuration'];
 
-
-        new HealthBoxFanAccessory(this, accessory);
+        new HealthBoxFanAccessory(this, accessory, this.healthBoxService);
 
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
@@ -102,9 +101,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
       if (existingAccessory) {
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-        existingAccessory.context.healthBoxIp = this.config['healthBoxUri'];
-
-        new HealthBoxFanAccessory(this, existingAccessory);
+        new HealthBoxFanAccessory(this, existingAccessory, this.healthBoxService);
       } else {
         this.log.info('Adding new accessory:', sensor.name);
 
@@ -116,7 +113,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.config = {};
         accessory.context.config.healthBoxIp = this.config['healthBoxUri'];
 
-        new HealthBoxAirQualityAccessory(this, accessory);
+        new HealthBoxAirQualityAccessory(this, accessory, this.healthBoxService);
 
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }

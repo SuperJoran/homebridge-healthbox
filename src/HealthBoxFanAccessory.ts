@@ -1,9 +1,7 @@
 import {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
 
 import {HealthBoxHomebridgePlatform} from './platform';
-import axios from 'axios';
-import {HealthBoxInfoResponse} from './model/api/health-box-info-response.http-model';
-import {HealthBoxBoostResponse} from './model/api/health-box-boost-response.http-model';
+import {HealthBoxApiService} from './health-box-api-service';
 
 
 export class HealthBoxFanAccessory {
@@ -11,20 +9,13 @@ export class HealthBoxFanAccessory {
 
   private state = {
     id: 1,
-    config: {
-      boostFanSpeed: 200,
-      boostDuration: 3600,
-      healthBoxIp: 'http://localhost:8080',
-    },
   };
 
   constructor(
     private readonly platform: HealthBoxHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly healthBoxService: HealthBoxApiService,
   ) {
-    this.state.config.boostFanSpeed = accessory.context.config.boostFanSpeed;
-    this.state.config.boostDuration = accessory.context.config.boostDuration;
-    this.state.config.healthBoxIp = accessory.context.config.healthBoxIp;
     this.state.id = accessory.context.room.id;
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson')
@@ -43,28 +34,17 @@ export class HealthBoxFanAccessory {
 
   async setActive(value: CharacteristicValue) {
     const on = value === 1;
-
     this.platform.log.debug(on ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
-    const body = {
-      'enable': on, 'level': this.state.config.boostFanSpeed, 'timeout': this.state.config.boostDuration,
-    };
 
-    await axios.put<HealthBoxBoostResponse>(this.state.config.healthBoxIp + '/v1/api/boost/' + this.state.id, body).then(result => {
-      this.platform.log.debug(result.data.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.id);
+    await this.healthBoxService.boost(this.state.id, on).then(result => {
+      this.platform.log.debug(result.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.id);
     });
   }
 
   async getActive(): Promise<CharacteristicValue> {
     this.platform.log.debug('Requesting Boost status for id ', this.state.id);
-    return axios.get<HealthBoxInfoResponse>(this.state.config.healthBoxIp + '/v1/api/data/current').then(resp => {
-      const isPossiblyOn = resp.data.room.filter(room => room.id === this.state.id)
-        .pop()!.actuator
-        .filter(parameter => parameter.type === 'air valve')
-        .map(actuator => actuator.parameter)
-        .map(param => parseFloat(param.flow_rate.value) > 50)
-        .pop();
-
-      const isOn = isPossiblyOn ?? false;
+    return this.healthBoxService.getRoomActuatorValue(this.state.id).then(value => {
+      const isOn = parseFloat(value) > 50;
       this.platform.log.debug(isOn ? 'Boost is currently ON for id ' : 'Boost is currently OFF for id', this.state.id);
       return isOn ? 1 : 0;
     });
