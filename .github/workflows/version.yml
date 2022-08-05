@@ -6,12 +6,12 @@ on:
       type:
         description: 'Type'
         required: true
-        default: 'PATCH'
+        default: 'patch'
         type: choice
         options:
-          - MAJOR
-          - MINOR
-          - PATCH
+          - major
+          - minor
+          - patch
 
 jobs:
   publish:
