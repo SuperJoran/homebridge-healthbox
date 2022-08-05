@@ -1,0 +1,25 @@
+name: Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Type'
+        required: true
+        default: 'PATCH'
+        type: choice
+        options:
+          - MAJOR
+          - MINOR
+          - PATCH
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm version ${{ inputs.type }}
