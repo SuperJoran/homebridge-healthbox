@@ -1,4 +1,4 @@
-name: Version
+name: Publish
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
           - patch
 
 jobs:
-  version:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -31,3 +31,6 @@ jobs:
         run: npm version ${{ inputs.type }}
       - name: Git Push
         run: git push origin master --follow-tags
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
