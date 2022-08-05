@@ -36,15 +36,17 @@ export class HealthBoxFanAccessory {
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.room.name);
 
-    this.service.getCharacteristic(this.platform.Characteristic.On)
-      .onSet(this.setOn.bind(this))
-      .onGet(this.getOn.bind(this));
+    this.service.getCharacteristic(this.platform.Characteristic.Active)
+      .onSet(this.setActive.bind(this))
+      .onGet(this.getActive.bind(this));
   }
 
-  async setOn(value: CharacteristicValue) {
-    this.platform.log.debug(value ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
+  async setActive(value: CharacteristicValue) {
+    const on = value === 1;
+
+    this.platform.log.debug(on ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
     const body = {
-      'enable': value, 'level': this.state.config.boostFanSpeed, 'timeout': this.state.config.boostDuration,
+      'enable': on, 'level': this.state.config.boostFanSpeed, 'timeout': this.state.config.boostDuration,
     };
 
     await axios.put<HealthBoxBoostResponse>(this.state.config.healthBoxIp + '/v1/api/boost/' + this.state.id, body).then(result => {
@@ -52,7 +54,7 @@ export class HealthBoxFanAccessory {
     });
   }
 
-  async getOn(): Promise<CharacteristicValue> {
+  async getActive(): Promise<CharacteristicValue> {
     this.platform.log.debug('Requesting Boost status for id ', this.state.id);
     return axios.get<HealthBoxInfoResponse>(this.state.config.healthBoxIp + '/v1/api/data/current').then(resp => {
       const isPossiblyOn = resp.data.room.filter(room => room.id === this.state.id)
@@ -64,7 +66,7 @@ export class HealthBoxFanAccessory {
 
       const isOn = isPossiblyOn ?? false;
       this.platform.log.debug(isOn ? 'Boost is currently ON for id ' : 'Boost is currently OFF for id', this.state.id);
-      return isOn;
+      return isOn ? 1 : 0;
     });
   }
 }

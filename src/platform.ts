@@ -54,7 +54,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
 
       let existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
-      if (existingAccessory && !existingAccessory.context.version) {
+      if (existingAccessory && (!existingAccessory.context.version || existingAccessory.context.version < 1)) {
         this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
         existingAccessory = undefined;
       }
@@ -72,7 +72,7 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
 
         accessory.context.room = room;
         accessory.context.manufacturer = resp.data;
-        accessory.context.version = 0; //Version added so we can introduce breaking changes
+        accessory.context.version = 1; //Version added so we can introduce breaking changes
         accessory.context.config = {};
         accessory.context.config.healthBoxIp = this.config['healthBoxUri'];
         accessory.context.config.boostFanSpeed = this.config['boostFanSpeed'];
