@@ -1,5 +1,4 @@
 import axios from 'axios';
-import {Sensor} from './model/api/health-box-info-response.http-model';
 import {HealthBoxBoostResponse} from './model/api/health-box-boost-response.http-model';
 
 

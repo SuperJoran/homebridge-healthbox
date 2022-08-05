@@ -26,7 +26,9 @@ export class HealthBoxHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.healthBoxService = new HealthBoxApiService(this.config['healthBoxUri'], this.config['boostFanSpeed'], this.config['boostDuration']);
+    this.healthBoxService = new HealthBoxApiService(this.config['healthBoxUri'],
+      this.config['boostFanSpeed'],
+      this.config['boostDuration']);
 
     this.log.debug('Finished initializing platform:', this.config.name);
 
