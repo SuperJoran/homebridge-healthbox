@@ -23,10 +23,11 @@ jobs:
           node-version: 12
       - name: npm install
         run: npm install
-      - name: npm version
-        run: npm version ${{ inputs.type }}
-      - name: Git Push
+      - name: git config
         run: |
           git config --global user.name 'Github'
           git config --global user.email 'noreply@github.com'
-          git push
+      - name: npm version
+        run: npm version ${{ inputs.type }}
+      - name: Git Push
+          git push origin master --follow-tags
