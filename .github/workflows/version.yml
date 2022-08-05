@@ -30,4 +30,4 @@ jobs:
       - name: npm version
         run: npm version ${{ inputs.type }}
       - name: Git Push
-          git push origin master --follow-tags
+        run: git push origin master --follow-tags
