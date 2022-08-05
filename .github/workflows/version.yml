@@ -14,7 +14,7 @@ on:
           - patch
 
 jobs:
-  publish:
+  version:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
