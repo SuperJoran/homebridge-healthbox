@@ -1,8 +1,7 @@
 import {CharacteristicValue, PlatformAccessory, Service} from 'homebridge';
 
 import {HealthBoxHomebridgePlatform} from './platform';
-import axios from 'axios';
-import {HealthBoxInfoResponse} from './model/api/health-box-info-response.http-model';
+import {HealthBoxApiService} from './health-box-api-service';
 
 
 export class HealthBoxAirQualityAccessory {
@@ -18,6 +17,7 @@ export class HealthBoxAirQualityAccessory {
   constructor(
     private readonly platform: HealthBoxHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly healthBoxService: HealthBoxApiService,
   ) {
     this.state.config.healthBoxIp = accessory.context.config.healthBoxIp;
     this.state.id = accessory.context.sensor['basic id'];
@@ -38,20 +38,17 @@ export class HealthBoxAirQualityAccessory {
 
   async getOn(): Promise<CharacteristicValue> {
     this.platform.log.debug('Requesting Air quality status for id ', this.state.id);
-    return axios.get<HealthBoxInfoResponse>(this.state.config.healthBoxIp + '/v1/api/data/current').then(resp => {
-      let value = resp.data.sensor.filter(sensor => sensor['basic id'] === this.state.id)
-        .map(sensor => parseFloat(sensor.parameter.index.value))
-        .map(num => num / 20)
-        .map(num => Number(num.toFixed(0)))
-        .pop()!;
+    return this.healthBoxService.getHealthSensor(this.state.id).then(indexValue => {
+      const value = parseFloat(indexValue) / 20;
+      let roundedValue = Number(value.toFixed(0));
 
-      if (value > 5) {
-        this.platform.log.debug('Health status exceeded max value! value=', value);
-        value = 5;
+      if (roundedValue > 5) {
+        this.platform.log.debug('Health status exceeded max value! value=', roundedValue);
+        roundedValue = 5;
       }
 
-      this.platform.log.debug('Health status is:', value);
-      return value;
+      this.platform.log.debug('Health status is:', roundedValue);
+      return roundedValue;
     });
   }
 }
