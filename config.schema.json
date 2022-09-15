@@ -27,6 +27,12 @@
         "type": "integer",
         "minimum": 0,
         "maximum": 999999999
+      },
+      "apiKey": {
+        "title": "The API key (obtained from Renson or 3rd party vendor, not required). Provides extra sensor data for each room.",
+        "type": "string",
+        "required": false,
+        "placeholder": "xxxx-xxxx-xxxx-xxxx-xxxx"
       }
     }
   }

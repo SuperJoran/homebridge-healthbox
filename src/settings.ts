@@ -7,3 +7,7 @@ export const PLATFORM_NAME = 'HealthBoxHomebridgePlugin';
  * This must match the name of your plugin as defined the package.json
  */
 export const PLUGIN_NAME = 'homebridge-healthbox-plugin';
+
+
+export const HEALTH_VERSION = 2;
+export const VENTILATION_VERSION = 1;

@@ -8,7 +8,7 @@ export class HealthBoxFanAccessory {
   private service: Service;
 
   private state = {
-    id: 1,
+    roomId: 1,
   };
 
   constructor(
@@ -16,7 +16,7 @@ export class HealthBoxFanAccessory {
     private readonly accessory: PlatformAccessory,
     private readonly healthBoxService: HealthBoxApiService,
   ) {
-    this.state.id = accessory.context.room.id;
+    this.state.roomId = accessory.context.room.id;
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Renson')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.manufacturer.serial);
@@ -34,18 +34,18 @@ export class HealthBoxFanAccessory {
 
   async setActive(value: CharacteristicValue) {
     const on = value === 1;
-    this.platform.log.debug(on ? 'Enable boost for id' : 'Disable boost for id', this.state.id);
+    this.platform.log.debug(on ? 'Enable boost for id' : 'Disable boost for id', this.state.roomId);
 
-    await this.healthBoxService.boost(this.state.id, on).then(result => {
-      this.platform.log.debug(result.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.id);
+    await this.healthBoxService.boost(this.state.roomId, on).then(result => {
+      this.platform.log.debug(result.enable ? 'Boost enabled for id ' : 'Boost disabled for id ', this.state.roomId);
     });
   }
 
   async getActive(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Requesting Boost status for id ', this.state.id);
-    return this.healthBoxService.getRoomActuatorValue(this.state.id).then(value => {
+    this.platform.log.debug('Requesting Boost status for id ', this.state.roomId);
+    return this.healthBoxService.getRoomActuatorValue(this.state.roomId).then(value => {
       const isOn = parseFloat(value) > 50;
-      this.platform.log.debug(isOn ? 'Boost is currently ON for id ' : 'Boost is currently OFF for id', this.state.id);
+      this.platform.log.debug(isOn ? 'Boost is currently ON for id ' : 'Boost is currently OFF for id', this.state.roomId);
       return isOn ? 1 : 0;
     });
   }
