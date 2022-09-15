@@ -26,7 +26,8 @@ Example config.json:
             "healthBoxUri": "http://192.168.1.3",
             "boostFanSpeed": 200,
             "boostDuration": 3600,
-            "platform": "HealthBoxHomebridgePlugin"
+            "platform": "HealthBoxHomebridgePlugin",
+            "apiKey": "xxxx-xxxx-xxxx-xxxx-xxxx"
         }
     ]
 
